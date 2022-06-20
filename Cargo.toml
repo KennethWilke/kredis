@@ -16,3 +16,6 @@ kresp = "0.1.1"
 multistream = "0.1.0"
 anyhow = "1.0"
 thiserror = "1.0"
+
+[dev-dependencies]
+tokio-test = "*"

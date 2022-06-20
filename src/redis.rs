@@ -5,7 +5,7 @@ use multistream::Client;
 use crate::error::RedisError;
 
 pub struct Redis {
-    connection: Client,
+    pub connection: Client,
     parser: RespParser
 }
 
@@ -18,7 +18,7 @@ impl Redis {
         Ok(Redis{ connection, parser: RespParser::default() })
     }
 
-    async fn read(&mut self) -> Result<Vec<RespType>> {
+    pub async fn read(&mut self) -> Result<Vec<RespType>> {
         let reply = self.connection.recv().await?;
         self.parser.read(&reply)
     }
@@ -33,33 +33,5 @@ impl Redis {
             Some(result) => Ok(result),
             None => Err(RedisError::ProtocolError.into())
         }
-    }
-
-    pub async fn ping(&mut self) -> Result<()> {
-        self.connection.send(b"PING\r\n").await?;
-        let reply = self.read().await?;
-        let reply = match reply.get(0) {
-            Some(reply) => match reply {
-                RespType::SimpleString(reply) => reply,
-                _ => return Err(RedisError::ProtocolError.into())
-            },
-            None => return Err(RedisError::ProtocolError.into())
-        };
-        if reply != "PONG" {
-            Err(RedisError::ProtocolError.into())
-        } else {
-            Ok(())
-        }
-    }
-
-    pub async fn get(&mut self, key: &[u8]) -> Result<RespType> {
-        let command = "GET".as_bytes();
-        self.command(vec![command, key]).await
-    }
-
-    pub async fn set(&mut self, key: &[u8], value: &[u8]) -> Result<()> {
-        let command = "SET".as_bytes();
-        self.command(vec![command, key, value]).await?;
-        Ok(())
     }
 }
